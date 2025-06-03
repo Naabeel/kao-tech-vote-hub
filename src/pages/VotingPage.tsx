@@ -53,7 +53,7 @@ const VotingPage = ({ currentEmployee, onBack }: {
     const { data, error } = await supabase
       .from('employees')
       .select('*')
-      .neq('employee_id', currentEmployee.employee_id); // Exclude current employee
+      .neq('employee_id', currentEmployee.employee_id);
 
     if (!error && data) {
       setEmployees(data);
@@ -85,7 +85,7 @@ const VotingPage = ({ currentEmployee, onBack }: {
         });
 
       if (error) {
-        if (error.code === '23505') { // Unique constraint violation
+        if (error.code === '23505') {
           toast({
             title: "Already Voted",
             description: "You have already voted for this employee",
@@ -111,30 +111,30 @@ const VotingPage = ({ currentEmployee, onBack }: {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
           <div className="flex items-center gap-4">
             <Button onClick={onBack} variant="outline" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              Back
             </Button>
-            <h1 className="text-3xl font-bold text-gray-900">Voting Session</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Voting Session</h1>
           </div>
           
           {votingActive && (
-            <div className="flex items-center gap-2 bg-red-100 px-4 py-2 rounded-lg">
-              <Timer className="w-5 h-5 text-red-600" />
-              <span className="font-bold text-red-600">{timeLeft}s</span>
+            <div className="flex items-center gap-2 bg-red-100 px-3 py-2 rounded-lg">
+              <Timer className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
+              <span className="font-bold text-red-600 text-sm sm:text-base">{timeLeft}s</span>
             </div>
           )}
         </div>
 
         {!selectedEmployee ? (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Search Bar */}
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="relative">
                   <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                   <Input
@@ -148,20 +148,20 @@ const VotingPage = ({ currentEmployee, onBack }: {
             </Card>
 
             {/* Employee List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {filteredEmployees.map((employee) => (
                 <Card key={employee.employee_id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
-                    <CardTitle className="text-lg">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">
                       {employee.first_name} {employee.last_name}
                     </CardTitle>
-                    <Badge variant="outline">{employee.employee_id}</Badge>
+                    <Badge variant="outline" className="text-xs">{employee.employee_id}</Badge>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     <div className="space-y-3">
                       <div>
-                        <h4 className="font-semibold text-sm text-gray-600">Selected Idea:</h4>
-                        <p className="text-sm">{employee.selected_idea}</p>
+                        <h4 className="font-semibold text-xs sm:text-sm text-gray-600">Selected Idea:</h4>
+                        <p className="text-xs sm:text-sm line-clamp-2">{employee.selected_idea}</p>
                       </div>
                       <Button 
                         onClick={() => startVotingSession(employee)}
@@ -180,20 +180,20 @@ const VotingPage = ({ currentEmployee, onBack }: {
           /* Voting Interface */
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle className="text-2xl text-center">
+              <CardTitle className="text-xl sm:text-2xl text-center">
                 Voting for: {selectedEmployee.first_name} {selectedEmployee.last_name}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6">
               <div className="text-center">
-                <Badge variant="outline" className="text-lg p-2">
+                <Badge variant="outline" className="text-sm sm:text-lg p-2">
                   {selectedEmployee.employee_id}
                 </Badge>
               </div>
               
               <div>
-                <h3 className="font-semibold text-lg mb-2">Selected Idea:</h3>
-                <p className="text-gray-700 bg-gray-50 p-4 rounded-lg text-center">
+                <h3 className="font-semibold text-base sm:text-lg mb-2">Selected Idea:</h3>
+                <p className="text-sm sm:text-base text-gray-700 bg-gray-50 p-4 rounded-lg text-center">
                   {selectedEmployee.selected_idea}
                 </p>
               </div>
@@ -205,15 +205,15 @@ const VotingPage = ({ currentEmployee, onBack }: {
                     size="lg"
                     className="w-full max-w-xs"
                   >
-                    <ThumbsUp className="w-5 h-5 mr-2" />
+                    <ThumbsUp className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                     Cast Your Vote
                   </Button>
                 ) : hasVoted ? (
-                  <div className="text-green-600 font-semibold">
+                  <div className="text-green-600 font-semibold text-sm sm:text-base">
                     ✓ Vote Cast Successfully!
                   </div>
                 ) : (
-                  <div className="text-red-600 font-semibold">
+                  <div className="text-red-600 font-semibold text-sm sm:text-base">
                     Voting Time Expired
                   </div>
                 )}

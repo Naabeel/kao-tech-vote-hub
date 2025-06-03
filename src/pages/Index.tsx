@@ -4,6 +4,7 @@ import Auth from './Auth';
 import Dashboard from './Dashboard';
 import VotingPage from './VotingPage';
 import Leaderboard from './Leaderboard';
+import AdminPanel from '../components/AdminPanel';
 
 interface Employee {
   employee_id: string;
@@ -14,7 +15,7 @@ interface Employee {
   email: string;
 }
 
-type PageType = 'dashboard' | 'voting' | 'leaderboard';
+type PageType = 'dashboard' | 'voting' | 'leaderboard' | 'admin';
 
 const Index = () => {
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
@@ -26,7 +27,17 @@ const Index = () => {
     if (stored) {
       setCurrentEmployee(JSON.parse(stored));
     }
+
+    // Check for admin access (you can add proper admin authentication later)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('admin') === 'true') {
+      setCurrentPage('admin');
+    }
   }, []);
+
+  if (currentPage === 'admin') {
+    return <AdminPanel />;
+  }
 
   if (!currentEmployee) {
     return <Auth />;
