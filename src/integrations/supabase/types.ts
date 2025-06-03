@@ -9,7 +9,110 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      employees: {
+        Row: {
+          created_at: string
+          email: string | null
+          employee_id: string
+          first_name: string
+          id: string
+          ideas: string | null
+          last_name: string
+          selected_idea: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          employee_id: string
+          first_name: string
+          id?: string
+          ideas?: string | null
+          last_name: string
+          selected_idea?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          employee_id?: string
+          first_name?: string
+          id?: string
+          ideas?: string | null
+          last_name?: string
+          selected_idea?: string | null
+        }
+        Relationships: []
+      }
+      votes: {
+        Row: {
+          created_at: string
+          id: string
+          voted_for_employee_id: string
+          voter_employee_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          voted_for_employee_id: string
+          voter_employee_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          voted_for_employee_id?: string
+          voter_employee_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_voted_for_employee_id_fkey"
+            columns: ["voted_for_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "votes_voter_employee_id_fkey"
+            columns: ["voter_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
+      voting_sessions: {
+        Row: {
+          created_at: string
+          current_employee_id: string | null
+          id: string
+          is_active: boolean
+          session_end: string
+          session_start: string
+        }
+        Insert: {
+          created_at?: string
+          current_employee_id?: string | null
+          id?: string
+          is_active?: boolean
+          session_end?: string
+          session_start?: string
+        }
+        Update: {
+          created_at?: string
+          current_employee_id?: string | null
+          id?: string
+          is_active?: boolean
+          session_end?: string
+          session_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voting_sessions_current_employee_id_fkey"
+            columns: ["current_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
