@@ -63,6 +63,7 @@ const Index = () => {
         <Dashboard 
           currentEmployee={currentEmployee} 
           onStartVoting={handleStartVoting}
+          onShowLeaderboard={handleShowLeaderboard}
         />
       );
   }

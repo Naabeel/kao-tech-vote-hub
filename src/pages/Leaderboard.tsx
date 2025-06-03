@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,7 +60,16 @@ const Leaderboard = ({ onBack }: { onBack: () => void }) => {
           ...employee,
           vote_count: employee.votes[0]?.count || 0
         }))
-        .sort((a, b) => b.vote_count - a.vote_count)
+        .sort((a, b) => {
+          // If vote counts are the same (including 0), sort alphabetically by name
+          if (a.vote_count === b.vote_count) {
+            const nameA = `${a.first_name} ${a.last_name}`.toLowerCase();
+            const nameB = `${b.first_name} ${b.last_name}`.toLowerCase();
+            return nameA.localeCompare(nameB);
+          }
+          // Otherwise sort by vote count (highest first)
+          return b.vote_count - a.vote_count;
+        })
         .slice(0, 20); // Top 20
 
       setLeaderboard(leaderboardData);
@@ -145,7 +153,7 @@ const Leaderboard = ({ onBack }: { onBack: () => void }) => {
         {leaderboard.length === 0 && (
           <Card>
             <CardContent className="p-8 text-center">
-              <p className="text-gray-600">No votes have been cast yet. Be the first to vote!</p>
+              <p className="text-gray-600">No employees found. Please check your database.</p>
             </CardContent>
           </Card>
         )}

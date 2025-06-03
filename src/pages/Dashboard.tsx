@@ -16,9 +16,10 @@ interface Employee {
   email: string;
 }
 
-const Dashboard = ({ currentEmployee, onStartVoting }: { 
+const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard }: { 
   currentEmployee: Employee; 
   onStartVoting: () => void;
+  onShowLeaderboard: () => void;
 }) => {
   const [voteCount, setVoteCount] = useState(0);
   const { toast } = useToast();
@@ -110,7 +111,7 @@ const Dashboard = ({ currentEmployee, onStartVoting }: {
               <p className="text-gray-600 mb-4">
                 View real-time rankings of top ideas
               </p>
-              <Button variant="outline" className="w-full">
+              <Button onClick={onShowLeaderboard} variant="outline" className="w-full">
                 View Leaderboard
               </Button>
             </CardContent>
