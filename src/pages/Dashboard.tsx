@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Trophy, Users, Vote, Settings } from 'lucide-react';
+import { Trophy, Users, Vote } from 'lucide-react';
 
 interface Employee {
   employee_id: string;
@@ -44,10 +43,6 @@ const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard }: {
     window.location.reload();
   };
 
-  const handleAdminAccess = () => {
-    window.open('/?admin=true', '_blank');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4">
       <div className="max-w-4xl mx-auto">
@@ -57,15 +52,9 @@ const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard }: {
             <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">KaoTech Day-2025</h1>
             <p className="text-sm sm:text-base text-gray-600">Innovation Voting Platform</p>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Button onClick={handleAdminAccess} variant="outline" size="sm" className="flex-1 sm:flex-none">
-              <Settings className="w-4 h-4 mr-2" />
-              Admin
-            </Button>
-            <Button onClick={handleSignOut} variant="outline" size="sm" className="flex-1 sm:flex-none">
-              Sign Out
-            </Button>
-          </div>
+          <Button onClick={handleSignOut} variant="outline" size="sm" className="w-full sm:w-auto">
+            Sign Out
+          </Button>
         </div>
 
         {/* Welcome Card */}

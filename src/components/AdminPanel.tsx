@@ -7,14 +7,16 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import QRCodeGenerator from './QRCodeGenerator';
-import { Upload, Download, Users, BarChart3 } from 'lucide-react';
+import { Upload, Download, Users, BarChart3, LogOut, Globe } from 'lucide-react';
 
 const AdminPanel = () => {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [customDomain, setCustomDomain] = useState('');
   const { toast } = useToast();
   
-  const currentUrl = window.location.origin;
+  // Use custom domain if provided, otherwise fall back to current origin
+  const targetUrl = customDomain || window.location.origin;
 
   const handleFileUpload = async () => {
     if (!csvFile) {
@@ -83,19 +85,55 @@ const AdminPanel = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleAdminLogout = () => {
+    localStorage.removeItem('adminUser');
+    window.location.reload();
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Admin Panel</h1>
-          <p className="text-gray-600">KaoTech Day-2025 Voting Platform Administration</p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+          <div className="text-center sm:text-left">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Admin Panel</h1>
+            <p className="text-gray-600">KaoTech Day-2025 Voting Platform Administration</p>
+          </div>
+          <Button onClick={handleAdminLogout} variant="outline" className="flex items-center gap-2">
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* QR Code Section */}
           <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="w-5 h-5" />
+                  Custom Domain Configuration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="customDomain">Custom Domain (optional)</Label>
+                  <Input
+                    id="customDomain"
+                    type="url"
+                    value={customDomain}
+                    onChange={(e) => setCustomDomain(e.target.value)}
+                    placeholder="https://yourdomain.com"
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter your hosting domain to generate QR code for production
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            
             <QRCodeGenerator 
-              url={currentUrl} 
+              url={targetUrl} 
               title="Voting Platform QR Code" 
             />
             
@@ -103,14 +141,17 @@ const AdminPanel = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="w-5 h-5" />
-                  Quick Stats
+                  QR Code Instructions
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600">
-                  Share this QR code with employees to access the voting platform instantly.
-                  The platform is fully responsive and works on all devices.
-                </p>
+                <div className="space-y-2 text-sm">
+                  <p><strong>Current URL:</strong> {targetUrl}</p>
+                  <p className="text-gray-600">
+                    Share this QR code with employees to access the voting platform. 
+                    If you've set a custom domain above, the QR code will redirect to your production site.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -156,7 +197,7 @@ const AdminPanel = () => {
                 </div>
                 
                 <p className="text-xs text-gray-500">
-                  Upload a CSV file with employee data. This will replace existing dummy data.
+                  Upload a CSV file with employee data. This will replace existing data.
                 </p>
               </CardContent>
             </Card>
