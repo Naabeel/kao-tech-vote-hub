@@ -10,11 +10,25 @@ import { Search, Timer, ThumbsUp, ArrowLeft } from 'lucide-react';
 
 interface Employee {
   employee_id: string;
-  first_name: string;
-  last_name: string;
-  ideas: string;
-  selected_idea: string;
+  name: string;
+  name2: string;
   email: string;
+  selected_idea: string;
+  idea1_title: string;
+  idea2_title: string;
+  idea3_title: string;
+  problem1: string;
+  problem2: string;
+  problem3: string;
+  solution1: string;
+  solution2: string;
+  solution3: string;
+  roi1: string;
+  roi2: string;
+  roi3: string;
+  architectural_diagram: string;
+  group_name: string;
+  hackathon_participation: string;
 }
 
 const VotingPage = ({ currentEmployee, onBack }: { 
@@ -61,9 +75,9 @@ const VotingPage = ({ currentEmployee, onBack }: {
   };
 
   const filteredEmployees = employees.filter(emp =>
-    emp.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.employee_id.toLowerCase().includes(searchTerm.toLowerCase())
+    emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.name2?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.employee_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const startVotingSession = (employee: Employee) => {
@@ -98,7 +112,7 @@ const VotingPage = ({ currentEmployee, onBack }: {
         setHasVoted(true);
         toast({
           title: "Vote Cast!",
-          description: `Your vote for ${selectedEmployee.first_name} ${selectedEmployee.last_name} has been recorded`,
+          description: `Your vote for ${selectedEmployee.name} ${selectedEmployee.name2 ? `(${selectedEmployee.name2})` : ''} has been recorded`,
         });
       }
     } catch (error) {
@@ -153,20 +167,24 @@ const VotingPage = ({ currentEmployee, onBack }: {
                 <Card key={employee.employee_id} className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base sm:text-lg">
-                      {employee.first_name} {employee.last_name}
+                      {employee.name} {employee.name2 ? `(${employee.name2})` : ''}
                     </CardTitle>
                     <Badge variant="outline" className="text-xs">{employee.employee_id}</Badge>
+                    {employee.group_name && (
+                      <Badge variant="secondary" className="text-xs">{employee.group_name}</Badge>
+                    )}
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-3">
                       <div>
                         <h4 className="font-semibold text-xs sm:text-sm text-gray-600">Selected Idea:</h4>
-                        <p className="text-xs sm:text-sm line-clamp-2">{employee.selected_idea}</p>
+                        <p className="text-xs sm:text-sm line-clamp-2">{employee.selected_idea || 'No idea selected'}</p>
                       </div>
                       <Button 
                         onClick={() => startVotingSession(employee)}
                         className="w-full"
                         size="sm"
+                        disabled={!employee.selected_idea}
                       >
                         Vote for this Idea
                       </Button>
@@ -181,14 +199,21 @@ const VotingPage = ({ currentEmployee, onBack }: {
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle className="text-xl sm:text-2xl text-center">
-                Voting for: {selectedEmployee.first_name} {selectedEmployee.last_name}
+                Voting for: {selectedEmployee.name} {selectedEmployee.name2 ? `(${selectedEmployee.name2})` : ''}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6">
-              <div className="text-center">
+              <div className="text-center space-y-2">
                 <Badge variant="outline" className="text-sm sm:text-lg p-2">
                   {selectedEmployee.employee_id}
                 </Badge>
+                {selectedEmployee.group_name && (
+                  <div>
+                    <Badge variant="secondary" className="text-sm p-2">
+                      {selectedEmployee.group_name}
+                    </Badge>
+                  </div>
+                )}
               </div>
               
               <div>

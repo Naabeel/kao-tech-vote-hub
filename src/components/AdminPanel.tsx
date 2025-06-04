@@ -35,25 +35,45 @@ const AdminPanel = () => {
       const lines = text.split('\n');
       const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
       
-      // Clear existing dummy data
+      // Clear existing data
       await supabase.from('employees').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       
-      // Process CSV data
+      // Process CSV data mapping to new structure
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
         
         const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+        
+        // Map Excel columns to database columns
         const employee = {
-          employee_id: values[0],
-          first_name: values[1],
-          last_name: values[2],
-          email: values[3],
-          ideas: values[4] || '',
-          selected_idea: values[5] || ''
+          excel_id: values[0] || null, // id
+          start_time: values[1] ? new Date(values[1]).toISOString() : null, // Start time
+          completion_time: values[2] ? new Date(values[2]).toISOString() : null, // Completion time
+          email: values[3] || null, // Email
+          name: values[4] || '', // Name
+          last_modified_time: values[5] ? new Date(values[5]).toISOString() : null, // Last modified time
+          name2: values[6] || null, // Name2
+          employee_id: values[7] || '', // Employee ID
+          hackathon_participation: values[8] || null, // Would you be interested in participating in the upcoming Hackathon?
+          idea1_title: values[9] || null, // Idea-1 Title
+          problem1: values[10] || null, // Problem-1
+          solution1: values[11] || null, // Solution-1
+          roi1: values[12] || null, // Return on investment (ROI)-1
+          idea2_title: values[13] || null, // Idea-2 Title
+          problem2: values[14] || null, // Problem-2
+          solution2: values[15] || null, // Solution-2
+          roi2: values[16] || null, // Return on investment (ROI)-2
+          idea3_title: values[17] || null, // Idea-3 Title
+          problem3: values[18] || null, // Problem-3
+          solution3: values[19] || null, // Solution-3
+          roi3: values[20] || null, // Return on investment (ROI)-3
+          architectural_diagram: values[21] || null, // Architectural Diagram/ Process Flow Diagram
+          selected_idea: values[22] || null, // Selected Idea
+          group_name: values[23] || null, // Group
         };
         
-        if (employee.employee_id && employee.first_name && employee.last_name) {
+        if (employee.employee_id && employee.name) {
           await supabase.from('employees').insert(employee);
         }
       }
@@ -75,7 +95,7 @@ const AdminPanel = () => {
   };
 
   const downloadTemplate = () => {
-    const csvContent = "employee_id,first_name,last_name,email,ideas,selected_idea\n";
+    const csvContent = "id,Start time,Completion time,Email,Name,Last modified time,Name2,Employee ID,Would you be interested in participating in the upcoming Hackathon?,Idea-1 Title,Problem-1,Solution-1,Return on investment (ROI)-1,Idea-2 Title,Problem-2,Solution-2,Return on investment (ROI)-2,Idea-3 Title,Problem-3,Solution-3,Return on investment (ROI)-3,Architectural Diagram/ Process Flow Diagram,Selected Idea,Group\n";
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -167,7 +187,7 @@ const AdminPanel = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="csvFile">CSV File (employee_id, first_name, last_name, email, ideas, selected_idea)</Label>
+                  <Label htmlFor="csvFile">CSV File (matching your Excel structure)</Label>
                   <Input
                     id="csvFile"
                     type="file"
@@ -197,7 +217,7 @@ const AdminPanel = () => {
                 </div>
                 
                 <p className="text-xs text-gray-500">
-                  Upload a CSV file with employee data. This will replace existing data.
+                  Upload a CSV file with your Excel data structure. This will replace existing data.
                 </p>
               </CardContent>
             </Card>
@@ -212,10 +232,10 @@ const AdminPanel = () => {
               <CardContent>
                 <div className="space-y-2 text-sm">
                   <p><strong>Step 1:</strong> Export your Excel file as CSV</p>
-                  <p><strong>Step 2:</strong> Ensure columns match the template</p>
+                  <p><strong>Step 2:</strong> Ensure columns match the template exactly</p>
                   <p><strong>Step 3:</strong> Upload using the form above</p>
                   <p className="text-gray-600 mt-4">
-                    For Zoho API integration, we'll need your Zoho credentials and API endpoints.
+                    The system now supports all 23+ columns from your Excel spreadsheet including multiple ideas, problems, solutions, and ROI data.
                   </p>
                 </div>
               </CardContent>

@@ -9,11 +9,25 @@ import AdminLogin from '../components/AdminLogin';
 
 interface Employee {
   employee_id: string;
-  first_name: string;
-  last_name: string;
-  ideas: string;
-  selected_idea: string;
+  name: string;
+  name2: string;
   email: string;
+  selected_idea: string;
+  idea1_title: string;
+  idea2_title: string;
+  idea3_title: string;
+  problem1: string;
+  problem2: string;
+  problem3: string;
+  solution1: string;
+  solution2: string;
+  solution3: string;
+  roi1: string;
+  roi2: string;
+  roi3: string;
+  architectural_diagram: string;
+  group_name: string;
+  hackathon_participation: string;
 }
 
 type PageType = 'dashboard' | 'voting' | 'leaderboard' | 'admin';

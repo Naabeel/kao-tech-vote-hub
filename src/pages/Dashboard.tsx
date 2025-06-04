@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,11 +9,25 @@ import { Trophy, Users, Vote } from 'lucide-react';
 
 interface Employee {
   employee_id: string;
-  first_name: string;
-  last_name: string;
-  ideas: string;
-  selected_idea: string;
+  name: string;
+  name2: string;
   email: string;
+  selected_idea: string;
+  idea1_title: string;
+  idea2_title: string;
+  idea3_title: string;
+  problem1: string;
+  problem2: string;
+  problem3: string;
+  solution1: string;
+  solution2: string;
+  solution3: string;
+  roi1: string;
+  roi2: string;
+  roi3: string;
+  architectural_diagram: string;
+  group_name: string;
+  hackathon_participation: string;
 }
 
 const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard }: { 
@@ -43,6 +58,13 @@ const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard }: {
     window.location.reload();
   };
 
+  // Get all submitted ideas for display
+  const submittedIdeas = [
+    currentEmployee.idea1_title && { title: currentEmployee.idea1_title, problem: currentEmployee.problem1, solution: currentEmployee.solution1, roi: currentEmployee.roi1 },
+    currentEmployee.idea2_title && { title: currentEmployee.idea2_title, problem: currentEmployee.problem2, solution: currentEmployee.solution2, roi: currentEmployee.roi2 },
+    currentEmployee.idea3_title && { title: currentEmployee.idea3_title, problem: currentEmployee.problem3, solution: currentEmployee.solution3, roi: currentEmployee.roi3 }
+  ].filter(Boolean);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4">
       <div className="max-w-4xl mx-auto">
@@ -61,17 +83,33 @@ const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard }: {
         <Card className="mb-6 sm:mb-8">
           <CardHeader>
             <CardTitle className="text-xl sm:text-2xl">
-              Welcome, {currentEmployee.first_name} {currentEmployee.last_name}!
+              Welcome, {currentEmployee.name} {currentEmployee.name2 ? `(${currentEmployee.name2})` : ''}!
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-base sm:text-lg mb-2">Your Submitted Ideas:</h3>
-                <p className="text-sm sm:text-base text-gray-700 bg-gray-50 p-3 rounded-lg">
-                  {currentEmployee.ideas || 'No ideas submitted'}
-                </p>
-              </div>
+              {submittedIdeas.length > 0 ? (
+                <div>
+                  <h3 className="font-semibold text-base sm:text-lg mb-2">Your Submitted Ideas:</h3>
+                  <div className="space-y-3">
+                    {submittedIdeas.map((idea, index) => (
+                      <div key={index} className="bg-gray-50 p-3 rounded-lg">
+                        <h4 className="font-medium text-sm sm:text-base">{idea.title}</h4>
+                        {idea.problem && <p className="text-xs sm:text-sm text-gray-600 mt-1"><strong>Problem:</strong> {idea.problem}</p>}
+                        {idea.solution && <p className="text-xs sm:text-sm text-gray-600 mt-1"><strong>Solution:</strong> {idea.solution}</p>}
+                        {idea.roi && <p className="text-xs sm:text-sm text-gray-600 mt-1"><strong>ROI:</strong> {idea.roi}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h3 className="font-semibold text-base sm:text-lg mb-2">Your Submitted Ideas:</h3>
+                  <p className="text-sm sm:text-base text-gray-700 bg-gray-50 p-3 rounded-lg">
+                    No ideas submitted yet
+                  </p>
+                </div>
+              )}
               
               <div>
                 <h3 className="font-semibold text-base sm:text-lg mb-2">Your Selected Idea:</h3>
@@ -80,9 +118,18 @@ const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard }: {
                 </Badge>
               </div>
 
+              {currentEmployee.group_name && (
+                <div>
+                  <h3 className="font-semibold text-base sm:text-lg mb-2">Group:</h3>
+                  <Badge variant="outline" className="text-xs sm:text-sm p-2">
+                    {currentEmployee.group_name}
+                  </Badge>
+                </div>
+              )}
+
               <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
                 <Vote className="w-4 h-4" />
-                <span>Current votes for your idea: {voteCount}</span>
+                <span>Current votes for your selected idea: {voteCount}</span>
               </div>
             </div>
           </CardContent>

@@ -8,9 +8,10 @@ import { Trophy, Medal, Award, ArrowLeft } from 'lucide-react';
 
 interface LeaderboardEntry {
   employee_id: string;
-  first_name: string;
-  last_name: string;
+  name: string;
+  name2: string;
   selected_idea: string;
+  group_name: string;
   vote_count: number;
 }
 
@@ -48,9 +49,10 @@ const Leaderboard = ({ onBack }: { onBack: () => void }) => {
       .from('employees')
       .select(`
         employee_id,
-        first_name,
-        last_name,
+        name,
+        name2,
         selected_idea,
+        group_name,
         votes:votes!voted_for_employee_id(count)
       `);
 
@@ -62,8 +64,8 @@ const Leaderboard = ({ onBack }: { onBack: () => void }) => {
         }))
         .sort((a, b) => {
           if (a.vote_count === b.vote_count) {
-            const nameA = `${a.first_name} ${a.last_name}`.toLowerCase();
-            const nameB = `${b.first_name} ${b.last_name}`.toLowerCase();
+            const nameA = `${a.name} ${a.name2 || ''}`.toLowerCase();
+            const nameB = `${b.name} ${b.name2 || ''}`.toLowerCase();
             return nameA.localeCompare(nameB);
           }
           return b.vote_count - a.vote_count;
@@ -119,11 +121,18 @@ const Leaderboard = ({ onBack }: { onBack: () => void }) => {
                     {getRankIcon(index)}
                     <div>
                       <h3 className="text-base sm:text-lg font-semibold">
-                        {entry.first_name} {entry.last_name}
+                        {entry.name} {entry.name2 ? `(${entry.name2})` : ''}
                       </h3>
-                      <Badge variant="outline" className="text-xs">
-                        {entry.employee_id}
-                      </Badge>
+                      <div className="flex gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {entry.employee_id}
+                        </Badge>
+                        {entry.group_name && (
+                          <Badge variant="secondary" className="text-xs">
+                            {entry.group_name}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   
@@ -140,7 +149,7 @@ const Leaderboard = ({ onBack }: { onBack: () => void }) => {
                 <div className="mt-3 sm:mt-4">
                   <h4 className="font-medium text-gray-700 mb-1 text-sm sm:text-base">Innovation Idea:</h4>
                   <p className="text-xs sm:text-sm text-gray-600 bg-white p-3 rounded-lg">
-                    {entry.selected_idea}
+                    {entry.selected_idea || 'No idea selected'}
                   </p>
                 </div>
               </CardContent>

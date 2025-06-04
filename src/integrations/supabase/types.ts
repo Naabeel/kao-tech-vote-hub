@@ -32,37 +32,91 @@ export type Database = {
       }
       employees: {
         Row: {
+          architectural_diagram: string | null
+          completion_time: string | null
           created_at: string
           email: string | null
-          employee_id: string
-          first_name: string
+          employee_id: string | null
+          excel_id: string | null
+          group_name: string | null
+          hackathon_participation: string | null
           id: string
-          ideas: string | null
+          idea1_title: string | null
+          idea2_title: string | null
+          idea3_title: string | null
           is_admin: boolean | null
-          last_name: string
+          last_modified_time: string | null
+          name: string | null
+          name2: string | null
+          problem1: string | null
+          problem2: string | null
+          problem3: string | null
+          roi1: string | null
+          roi2: string | null
+          roi3: string | null
           selected_idea: string | null
+          solution1: string | null
+          solution2: string | null
+          solution3: string | null
+          start_time: string | null
         }
         Insert: {
+          architectural_diagram?: string | null
+          completion_time?: string | null
           created_at?: string
           email?: string | null
-          employee_id: string
-          first_name: string
+          employee_id?: string | null
+          excel_id?: string | null
+          group_name?: string | null
+          hackathon_participation?: string | null
           id?: string
-          ideas?: string | null
+          idea1_title?: string | null
+          idea2_title?: string | null
+          idea3_title?: string | null
           is_admin?: boolean | null
-          last_name: string
+          last_modified_time?: string | null
+          name?: string | null
+          name2?: string | null
+          problem1?: string | null
+          problem2?: string | null
+          problem3?: string | null
+          roi1?: string | null
+          roi2?: string | null
+          roi3?: string | null
           selected_idea?: string | null
+          solution1?: string | null
+          solution2?: string | null
+          solution3?: string | null
+          start_time?: string | null
         }
         Update: {
+          architectural_diagram?: string | null
+          completion_time?: string | null
           created_at?: string
           email?: string | null
-          employee_id?: string
-          first_name?: string
+          employee_id?: string | null
+          excel_id?: string | null
+          group_name?: string | null
+          hackathon_participation?: string | null
           id?: string
-          ideas?: string | null
+          idea1_title?: string | null
+          idea2_title?: string | null
+          idea3_title?: string | null
           is_admin?: boolean | null
-          last_name?: string
+          last_modified_time?: string | null
+          name?: string | null
+          name2?: string | null
+          problem1?: string | null
+          problem2?: string | null
+          problem3?: string | null
+          roi1?: string | null
+          roi2?: string | null
+          roi3?: string | null
           selected_idea?: string | null
+          solution1?: string | null
+          solution2?: string | null
+          solution3?: string | null
+          start_time?: string | null
         }
         Relationships: []
       }
