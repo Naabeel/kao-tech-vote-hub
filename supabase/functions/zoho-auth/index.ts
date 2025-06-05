@@ -55,9 +55,11 @@ serve(async (req) => {
 
       console.log('Employee found:', employee.name)
       
-      // Generate Zoho OAuth URL
+      // Generate Zoho OAuth URL - Fix the domain usage
       const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/zoho-auth`
       const authUrl = `https://accounts.${domain}/oauth/v2/auth?scope=ZohoPeople.forms.ALL&client_id=${clientId}&response_type=code&access_type=offline&redirect_uri=${encodeURIComponent(redirectUri)}&state=${email}`
+
+      console.log('Generated auth URL:', authUrl)
 
       return new Response(
         JSON.stringify({ 
@@ -95,7 +97,7 @@ serve(async (req) => {
     
     if (!tokenResponse.ok || tokenData.error) {
       console.error('Token exchange failed:', tokenData)
-      throw new Error('Failed to exchange OAuth code for token')
+      throw new Error(`Failed to exchange OAuth code for token: ${tokenData.error || tokenData.error_description}`)
     }
 
     console.log('OAuth token obtained successfully')
