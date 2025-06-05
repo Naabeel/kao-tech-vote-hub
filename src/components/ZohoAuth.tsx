@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ZohoAuthProps {
   onSuccess: (userData: any) => void;
@@ -18,31 +19,30 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
     setLoading(true);
     
     try {
-      // For now, we'll implement a basic email check against our database
-      // In production, this would integrate with Zoho OAuth
-      
-      // Note: You'll need to replace this with actual Zoho OAuth integration
-      // This is a placeholder implementation
-      
-      const response = await fetch('/api/auth/zoho', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
+      // Call our Supabase Edge Function for secure Zoho authentication
+      const { data, error } = await supabase.functions.invoke('zoho-auth', {
+        body: { email }
       });
       
-      if (response.ok) {
-        const userData = await response.json();
-        onSuccess(userData);
+      if (error) {
+        throw error;
+      }
+
+      if (data?.employee) {
+        onSuccess(data.employee);
+        toast({
+          title: "Success",
+          description: "Successfully authenticated with Zoho!",
+        });
       } else {
         throw new Error('Authentication failed');
       }
       
     } catch (error) {
+      console.error('Zoho auth error:', error);
       toast({
         title: "Authentication Error",
-        description: "Failed to authenticate with Zoho. Please check your credentials.",
+        description: "Failed to authenticate with Zoho. Please check your email and try again.",
         variant: "destructive",
       });
     } finally {
@@ -79,7 +79,7 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
         </Button>
         
         <div className="text-xs text-gray-500 text-center">
-          <p>This will redirect to your organization's Zoho login page</p>
+          <p>This will verify your email against our organization database</p>
         </div>
       </CardContent>
     </Card>
