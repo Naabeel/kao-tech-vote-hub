@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +10,6 @@ interface ZohoAuthProps {
 }
 
 const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
-  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -19,21 +17,21 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
     // Check if we're returning from Zoho OAuth
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
-    const state = urlParams.get('state'); // This contains the email
+    const state = urlParams.get('state');
     
-    if (code && state) {
+    if (code) {
       handleOAuthCallback(code, state);
     }
   }, []);
 
-  const handleOAuthCallback = async (code: string, email: string) => {
+  const handleOAuthCallback = async (code: string, state: string | null) => {
     setLoading(true);
     
     try {
       console.log('Processing OAuth callback');
       
       const { data, error } = await supabase.functions.invoke('zoho-auth', {
-        body: { email, code }
+        body: { code, state }
       });
       
       if (error) {
@@ -66,23 +64,14 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
   };
 
   const handleZohoLogin = async () => {
-    if (!email) {
-      toast({
-        title: "Email Required",
-        description: "Please enter your organization email address.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
     
     try {
-      console.log('Starting Zoho authentication for:', email);
+      console.log('Starting Zoho authentication');
       
-      // First validate the email and get Zoho OAuth URL
+      // Get Zoho OAuth URL directly
       const { data, error } = await supabase.functions.invoke('zoho-auth', {
-        body: { email }
+        body: { action: 'get_auth_url' }
       });
       
       if (error) {
@@ -92,22 +81,15 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
       if (data?.authUrl) {
         // Redirect to Zoho OAuth
         window.location.href = data.authUrl;
-      } else if (data?.employee) {
-        // Direct authentication (fallback)
-        onSuccess(data.employee);
-        toast({
-          title: "Success",
-          description: "Successfully authenticated!",
-        });
       } else {
-        throw new Error('Authentication failed');
+        throw new Error('Failed to get authentication URL');
       }
       
     } catch (error) {
       console.error('Zoho auth error:', error);
       toast({
         title: "Authentication Error",
-        description: error.message || "Failed to authenticate with Zoho. Please check your email and try again.",
+        description: error.message || "Failed to authenticate with Zoho. Please try again.",
         variant: "destructive",
       });
       setLoading(false);
@@ -120,27 +102,12 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
         <CardTitle className="text-center">Zoho Authentication</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <label htmlFor="zoho-email" className="block text-sm font-medium text-gray-700 mb-1">
-            Organization Email
-          </label>
-          <Input
-            id="zoho-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your.email@yourcompany.com"
-            required
-            disabled={loading}
-          />
-        </div>
-        
         <Button 
           onClick={handleZohoLogin}
-          className="w-full"
-          disabled={loading || !email}
+          className="w-full bg-blue-600 hover:bg-blue-700"
+          disabled={loading}
         >
-          {loading ? 'Authenticating...' : 'Login with Zoho'}
+          {loading ? 'Redirecting...' : 'Login with Zoho'}
         </Button>
         
         <div className="text-xs text-gray-500 text-center">
