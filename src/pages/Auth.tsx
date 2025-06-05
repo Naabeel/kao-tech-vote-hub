@@ -3,7 +3,9 @@ import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import ZohoAuth from '@/components/ZohoAuth';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -48,6 +50,12 @@ const Auth = () => {
     }
   };
 
+  const handleZohoSuccess = (userData: any) => {
+    // Handle successful Zoho authentication
+    localStorage.setItem('currentEmployee', JSON.stringify(userData));
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
@@ -56,30 +64,45 @@ const Auth = () => {
           <p className="mt-2 text-gray-600">Innovation Voting Platform</p>
         </div>
         
-        <form onSubmit={handleSignIn} className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Organization Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your.email@kaotech.com"
-              required
-              className="mt-1"
-            />
-          </div>
+        <Tabs defaultValue="simple" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="simple">Simple Login</TabsTrigger>
+            <TabsTrigger value="zoho">Zoho SSO</TabsTrigger>
+          </TabsList>
           
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={loading}
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </Button>
-        </form>
+          <TabsContent value="simple">
+            <form onSubmit={handleSignIn} className="space-y-6">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Organization Email
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your.email@kaotech.com"
+                  required
+                  className="mt-1"
+                />
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </form>
+          </TabsContent>
+          
+          <TabsContent value="zoho">
+            <div className="flex justify-center">
+              <ZohoAuth onSuccess={handleZohoSuccess} />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

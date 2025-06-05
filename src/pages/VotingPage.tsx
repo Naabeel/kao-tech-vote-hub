@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -77,7 +76,8 @@ const VotingPage = ({ currentEmployee, onBack }: {
   const filteredEmployees = employees.filter(emp =>
     emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     emp.name2?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.employee_id?.toLowerCase().includes(searchTerm.toLowerCase())
+    emp.employee_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.group_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const startVotingSession = (employee: Employee) => {
@@ -152,12 +152,15 @@ const VotingPage = ({ currentEmployee, onBack }: {
                 <div className="relative">
                   <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                   <Input
-                    placeholder="Search employee by name or ID..."
+                    placeholder="Search by name, employee ID, or group name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
                 </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  You can search by employee name, employee ID, or group name to find team members
+                </p>
               </CardContent>
             </Card>
 
@@ -169,10 +172,12 @@ const VotingPage = ({ currentEmployee, onBack }: {
                     <CardTitle className="text-base sm:text-lg">
                       {employee.name} {employee.name2 ? `(${employee.name2})` : ''}
                     </CardTitle>
-                    <Badge variant="outline" className="text-xs">{employee.employee_id}</Badge>
-                    {employee.group_name && (
-                      <Badge variant="secondary" className="text-xs">{employee.group_name}</Badge>
-                    )}
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline" className="text-xs">{employee.employee_id}</Badge>
+                      {employee.group_name && (
+                        <Badge variant="secondary" className="text-xs">{employee.group_name}</Badge>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-3">
@@ -193,6 +198,15 @@ const VotingPage = ({ currentEmployee, onBack }: {
                 </Card>
               ))}
             </div>
+
+            {filteredEmployees.length === 0 && searchTerm && (
+              <Card>
+                <CardContent className="p-6 sm:p-8 text-center">
+                  <p className="text-gray-600">No employees found matching "{searchTerm}"</p>
+                  <p className="text-sm text-gray-500 mt-2">Try searching by name, employee ID, or group name</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         ) : (
           /* Voting Interface */
