@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { email } = await req.json()
+    const { email, code } = await req.json()
 
     // Get Zoho credentials from Supabase secrets
     const clientId = Deno.env.get('ZOHO_CLIENT_ID')
@@ -23,34 +23,100 @@ serve(async (req) => {
       throw new Error('Zoho credentials not configured')
     }
 
-    // For now, we'll do a simple email validation against our employees table
-    // In production, you'd implement full OAuth flow here
+    console.log('Zoho credentials loaded successfully')
+
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Check if employee exists in our database
-    const { data: employee, error } = await supabase
+    // If this is just an email validation (no OAuth code), check employee exists
+    if (!code) {
+      console.log('Validating email:', email)
+      
+      // Check if employee exists in our database
+      const { data: employee, error } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('email', email)
+        .single()
+
+      if (error || !employee) {
+        console.log('Employee not found:', error)
+        return new Response(
+          JSON.stringify({ error: 'Employee not found in organization' }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 404
+          }
+        )
+      }
+
+      console.log('Employee found:', employee.name)
+      
+      // Generate Zoho OAuth URL
+      const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/zoho-auth`
+      const authUrl = `https://accounts.${domain}/oauth/v2/auth?scope=ZohoPeople.forms.ALL&client_id=${clientId}&response_type=code&access_type=offline&redirect_uri=${encodeURIComponent(redirectUri)}&state=${email}`
+
+      return new Response(
+        JSON.stringify({ 
+          employee,
+          authUrl,
+          message: 'Employee validated. Proceeding with Zoho OAuth...'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      )
+    }
+
+    // If we have an OAuth code, exchange it for access token
+    console.log('Processing OAuth code for email:', email)
+    
+    const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/zoho-auth`
+    
+    const tokenResponse = await fetch(`https://accounts.${domain}/oauth/v2/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        code: code,
+      }),
+    })
+
+    const tokenData = await tokenResponse.json()
+    
+    if (!tokenResponse.ok || tokenData.error) {
+      console.error('Token exchange failed:', tokenData)
+      throw new Error('Failed to exchange OAuth code for token')
+    }
+
+    console.log('OAuth token obtained successfully')
+
+    // Get employee data from our database
+    const { data: employee, error: dbError } = await supabase
       .from('employees')
       .select('*')
       .eq('email', email)
       .single()
 
-    if (error || !employee) {
-      return new Response(
-        JSON.stringify({ error: 'Employee not found in organization' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 404
-        }
-      )
+    if (dbError || !employee) {
+      throw new Error('Employee not found after OAuth validation')
     }
 
     // Return employee data for successful authentication
     return new Response(
-      JSON.stringify({ employee }),
+      JSON.stringify({ 
+        employee,
+        message: 'Successfully authenticated with Zoho'
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
@@ -58,6 +124,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
+    console.error('Zoho auth error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 

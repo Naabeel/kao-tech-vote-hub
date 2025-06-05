@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,13 +15,25 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleZohoLogin = async () => {
+  useEffect(() => {
+    // Check if we're returning from Zoho OAuth
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state'); // This contains the email
+    
+    if (code && state) {
+      handleOAuthCallback(code, state);
+    }
+  }, []);
+
+  const handleOAuthCallback = async (code: string, email: string) => {
     setLoading(true);
     
     try {
-      // Call our Supabase Edge Function for secure Zoho authentication
+      console.log('Processing OAuth callback');
+      
       const { data, error } = await supabase.functions.invoke('zoho-auth', {
-        body: { email }
+        body: { email, code }
       });
       
       if (error) {
@@ -34,6 +46,59 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
           title: "Success",
           description: "Successfully authenticated with Zoho!",
         });
+        
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else {
+        throw new Error('Authentication failed');
+      }
+      
+    } catch (error) {
+      console.error('Zoho OAuth callback error:', error);
+      toast({
+        title: "Authentication Error",
+        description: "Failed to complete Zoho authentication. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleZohoLogin = async () => {
+    if (!email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your organization email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      console.log('Starting Zoho authentication for:', email);
+      
+      // First validate the email and get Zoho OAuth URL
+      const { data, error } = await supabase.functions.invoke('zoho-auth', {
+        body: { email }
+      });
+      
+      if (error) {
+        throw error;
+      }
+
+      if (data?.authUrl) {
+        // Redirect to Zoho OAuth
+        window.location.href = data.authUrl;
+      } else if (data?.employee) {
+        // Direct authentication (fallback)
+        onSuccess(data.employee);
+        toast({
+          title: "Success",
+          description: "Successfully authenticated!",
+        });
       } else {
         throw new Error('Authentication failed');
       }
@@ -42,10 +107,9 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
       console.error('Zoho auth error:', error);
       toast({
         title: "Authentication Error",
-        description: "Failed to authenticate with Zoho. Please check your email and try again.",
+        description: error.message || "Failed to authenticate with Zoho. Please check your email and try again.",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -67,6 +131,7 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your.email@yourcompany.com"
             required
+            disabled={loading}
           />
         </div>
         
@@ -79,7 +144,7 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
         </Button>
         
         <div className="text-xs text-gray-500 text-center">
-          <p>This will verify your email against our organization database</p>
+          <p>This will redirect you to Zoho for secure authentication</p>
         </div>
       </CardContent>
     </Card>
