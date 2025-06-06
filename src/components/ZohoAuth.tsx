@@ -37,7 +37,7 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
 
       console.log('Redirecting to Zoho OAuth URL:', result.authUrl);
       
-      // Redirect to Zoho OAuth
+      // Redirect to Zoho OAuth - this will prompt for login every time
       window.location.href = result.authUrl;
       
     } catch (error) {
@@ -54,13 +54,19 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="text-center">Zoho Authentication</CardTitle>
+        <CardTitle className="text-center">Zoho SSO Authentication</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-sm text-gray-600 mb-4">
-          <p className="mb-2">You will be redirected to Zoho to sign in with your organization account.</p>
+          <p className="mb-2">Click below to authenticate with your Kanerika Zoho account.</p>
+          <p className="text-xs text-blue-600 mb-2">
+            ✓ You will be redirected to Zoho to enter your email and password
+          </p>
+          <p className="text-xs text-blue-600 mb-2">
+            ✓ Only @kanerika.com emails are allowed
+          </p>
           <p className="text-xs text-orange-600">
-            Note: If you're already signed into Zoho, you may need to sign out first to choose a different account.
+            Note: You will need to sign in with your Zoho credentials each time.
           </p>
         </div>
         
@@ -69,11 +75,11 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
           className="w-full"
           disabled={loading}
         >
-          {loading ? 'Redirecting to Zoho...' : 'Login with Zoho'}
+          {loading ? 'Redirecting to Zoho...' : 'Login with Zoho SSO'}
         </Button>
         
         <div className="text-xs text-gray-500 text-center">
-          <p>Login with your Kanerika organization account (@kanerika.com)</p>
+          <p>Authenticate with your Kanerika organization Zoho account</p>
         </div>
       </CardContent>
     </Card>

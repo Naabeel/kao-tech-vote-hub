@@ -34,8 +34,10 @@ serve(async (req) => {
       authUrl.searchParams.set('scope', 'AaaServer.profile.READ')
       authUrl.searchParams.set('redirect_uri', redirectUri)
       authUrl.searchParams.set('access_type', 'offline')
-      authUrl.searchParams.set('prompt', 'login') // Force login prompt
-      authUrl.searchParams.set('state', 'security_token_' + Date.now()) // Add state for security
+      authUrl.searchParams.set('prompt', 'login') // Force login prompt every time
+      authUrl.searchParams.set('state', 'security_token_' + Date.now())
+
+      console.log('Generated auth URL:', authUrl.toString())
 
       return new Response(
         JSON.stringify({ authUrl: authUrl.toString() }),
@@ -94,7 +96,12 @@ serve(async (req) => {
         throw new Error(`Profile fetch failed: ${profileData.error || 'Unknown error'}`)
       }
 
-      console.log('Profile data retrieved:', { email: profileData.Email })
+      console.log('Profile data retrieved from Zoho:', { 
+        email: profileData.Email,
+        firstName: profileData.First_Name,
+        lastName: profileData.Last_Name,
+        displayName: profileData.Display_Name
+      })
 
       // Verify the email domain is from your organization
       const userEmail = profileData.Email || profileData.email
@@ -120,41 +127,55 @@ serve(async (req) => {
         )
       }
 
-      // Check if employee exists in our database
+      console.log('Zoho authentication successful for:', userEmail)
+
+      // Optional: Check if employee exists in our database for additional data
       const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       
       const supabase = createClient(supabaseUrl, supabaseKey)
 
-      console.log('Looking up employee with email:', userEmail)
-
+      // Try to find employee in database (optional - for additional data like ideas)
       const { data: employee, error } = await supabase
         .from('employees')
         .select('*')
         .eq('email', userEmail)
         .single()
 
-      if (error || !employee) {
-        console.error('Employee lookup failed:', error)
-        return new Response(
-          JSON.stringify({ 
-            error: `Employee not found in organization database. Please contact your administrator to add your email (${userEmail}) to the system.` 
-          }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 404
-          }
-        )
+      // Create employee object from Zoho data
+      const employeeData = {
+        employee_id: profileData.ZUID || profileData.User_ID || userEmail,
+        name: profileData.Display_Name || `${profileData.First_Name} ${profileData.Last_Name}`,
+        name2: profileData.Display_Name || '',
+        email: userEmail,
+        // If employee exists in DB, merge the data, otherwise use defaults
+        selected_idea: employee?.selected_idea || '',
+        idea1_title: employee?.idea1_title || '',
+        idea2_title: employee?.idea2_title || '',
+        idea3_title: employee?.idea3_title || '',
+        problem1: employee?.problem1 || '',
+        problem2: employee?.problem2 || '',
+        problem3: employee?.problem3 || '',
+        solution1: employee?.solution1 || '',
+        solution2: employee?.solution2 || '',
+        solution3: employee?.solution3 || '',
+        roi1: employee?.roi1 || '',
+        roi2: employee?.roi2 || '',
+        roi3: employee?.roi3 || '',
+        architectural_diagram: employee?.architectural_diagram || '',
+        group_name: employee?.group_name || '',
+        hackathon_participation: employee?.hackathon_participation || ''
       }
 
-      console.log('Employee found:', { name: employee.name, email: employee.email })
+      console.log('Employee data prepared:', { name: employeeData.name, email: employeeData.email })
 
       // Return employee data for successful authentication
       return new Response(
         JSON.stringify({ 
-          employee,
-          zohoProfile: profileData
+          employee: employeeData,
+          zohoProfile: profileData,
+          fromDatabase: !!employee
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
