@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ZohoAuthProps {
   onSuccess: (userData: any) => void;
@@ -29,20 +28,13 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('zoho-auth', {
-        body: { code },
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
       const response = await fetch(
-        `${supabase.supabaseUrl}/functions/v1/zoho-auth?action=callback`,
+        `https://ktycwyftnqflwopupnik.supabase.co/functions/v1/zoho-auth?action=callback`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0eWN3eWZ0bnFmbHdvcHVwbmlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NDIyNTYsImV4cCI6MjA2NDUxODI1Nn0.sbc_jdSL6yxJwBIJGfCxp5-C6szkkbsdneYK-6RADIw`,
           },
           body: JSON.stringify({ code }),
         }
@@ -81,11 +73,11 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
     
     try {
       const response = await fetch(
-        `${supabase.supabaseUrl}/functions/v1/zoho-auth?action=initiate`,
+        `https://ktycwyftnqflwopupnik.supabase.co/functions/v1/zoho-auth?action=initiate`,
         {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0eWN3eWZ0bnFmbHdvcHVwbmlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NDIyNTYsImV4cCI6MjA2NDUxODI1Nn0.sbc_jdSL6yxJwBIJGfCxp5-C6szkkbsdneYK-6RADIw`,
             'Origin': window.location.origin,
           },
         }
