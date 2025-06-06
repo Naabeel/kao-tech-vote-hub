@@ -1,7 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,25 +10,52 @@ interface ZohoAuthProps {
 }
 
 const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
-  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleZohoLogin = async () => {
+  useEffect(() => {
+    // Check if we're returning from Zoho OAuth
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    
+    if (code) {
+      handleOAuthCallback(code);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  const handleOAuthCallback = async (code: string) => {
     setLoading(true);
     
     try {
-      // Call our Supabase Edge Function for secure Zoho authentication
       const { data, error } = await supabase.functions.invoke('zoho-auth', {
-        body: { email }
+        body: { code },
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-      
-      if (error) {
-        throw error;
+
+      const response = await fetch(
+        `${supabase.supabaseUrl}/functions/v1/zoho-auth?action=callback`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+          },
+          body: JSON.stringify({ code }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Authentication failed');
       }
 
-      if (data?.employee) {
-        onSuccess(data.employee);
+      if (result.employee) {
+        onSuccess(result.employee);
         toast({
           title: "Success",
           description: "Successfully authenticated with Zoho!",
@@ -39,13 +65,48 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
       }
       
     } catch (error) {
-      console.error('Zoho auth error:', error);
+      console.error('Zoho OAuth callback error:', error);
       toast({
         title: "Authentication Error",
-        description: "Failed to authenticate with Zoho. Please check your email and try again.",
+        description: error instanceof Error ? error.message : "Failed to authenticate with Zoho",
         variant: "destructive",
       });
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleZohoLogin = async () => {
+    setLoading(true);
+    
+    try {
+      const response = await fetch(
+        `${supabase.supabaseUrl}/functions/v1/zoho-auth?action=initiate`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Origin': window.location.origin,
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to initiate Zoho authentication');
+      }
+
+      // Redirect to Zoho OAuth
+      window.location.href = result.authUrl;
+      
+    } catch (error) {
+      console.error('Zoho auth initiation error:', error);
+      toast({
+        title: "Authentication Error",
+        description: "Failed to initiate Zoho authentication. Please try again.",
+        variant: "destructive",
+      });
       setLoading(false);
     }
   };
@@ -56,30 +117,16 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
         <CardTitle className="text-center">Zoho Authentication</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <label htmlFor="zoho-email" className="block text-sm font-medium text-gray-700 mb-1">
-            Organization Email
-          </label>
-          <Input
-            id="zoho-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your.email@yourcompany.com"
-            required
-          />
-        </div>
-        
         <Button 
           onClick={handleZohoLogin}
           className="w-full"
-          disabled={loading || !email}
+          disabled={loading}
         >
           {loading ? 'Authenticating...' : 'Login with Zoho'}
         </Button>
         
         <div className="text-xs text-gray-500 text-center">
-          <p>This will verify your email against our organization database</p>
+          <p>Login with your Kanerika organization account</p>
         </div>
       </CardContent>
     </Card>
