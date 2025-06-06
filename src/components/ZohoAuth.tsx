@@ -57,6 +57,13 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
         <CardTitle className="text-center">Zoho Authentication</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="text-sm text-gray-600 mb-4">
+          <p className="mb-2">You will be redirected to Zoho to sign in with your organization account.</p>
+          <p className="text-xs text-orange-600">
+            Note: If you're already signed into Zoho, you may need to sign out first to choose a different account.
+          </p>
+        </div>
+        
         <Button 
           onClick={handleZohoLogin}
           className="w-full"
@@ -66,7 +73,7 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
         </Button>
         
         <div className="text-xs text-gray-500 text-center">
-          <p>Login with your Kanerika organization account</p>
+          <p>Login with your Kanerika organization account (@kanerika.com)</p>
         </div>
       </CardContent>
     </Card>

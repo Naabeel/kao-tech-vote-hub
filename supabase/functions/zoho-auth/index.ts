@@ -27,13 +27,15 @@ serve(async (req) => {
     const redirectUri = `${req.headers.get('origin')}/auth/callback`
 
     if (action === 'initiate') {
-      // Step 1: Generate authorization URL for Zoho OAuth
+      // Step 1: Generate authorization URL for Zoho OAuth with prompt=login to force login
       const authUrl = new URL(`${domain}/oauth/v2/auth`)
       authUrl.searchParams.set('response_type', 'code')
       authUrl.searchParams.set('client_id', clientId)
       authUrl.searchParams.set('scope', 'AaaServer.profile.READ')
       authUrl.searchParams.set('redirect_uri', redirectUri)
       authUrl.searchParams.set('access_type', 'offline')
+      authUrl.searchParams.set('prompt', 'login') // Force login prompt
+      authUrl.searchParams.set('state', 'security_token_' + Date.now()) // Add state for security
 
       return new Response(
         JSON.stringify({ authUrl: authUrl.toString() }),
@@ -51,6 +53,8 @@ serve(async (req) => {
       if (!code) {
         throw new Error('Authorization code not provided')
       }
+
+      console.log('Processing OAuth callback with code:', code)
 
       // Exchange authorization code for access token
       const tokenResponse = await fetch(`${domain}/oauth/v2/token`, {
@@ -70,8 +74,11 @@ serve(async (req) => {
       const tokenData = await tokenResponse.json()
 
       if (!tokenResponse.ok) {
+        console.error('Token exchange failed:', tokenData)
         throw new Error(`Token exchange failed: ${tokenData.error || 'Unknown error'}`)
       }
+
+      console.log('Token exchange successful')
 
       // Get user profile from Zoho
       const profileResponse = await fetch(`https://accounts.zoho.com/oauth/user/info`, {
@@ -83,14 +90,29 @@ serve(async (req) => {
       const profileData = await profileResponse.json()
 
       if (!profileResponse.ok) {
+        console.error('Profile fetch failed:', profileData)
         throw new Error(`Profile fetch failed: ${profileData.error || 'Unknown error'}`)
       }
 
+      console.log('Profile data retrieved:', { email: profileData.Email })
+
       // Verify the email domain is from your organization
       const userEmail = profileData.Email || profileData.email
-      if (!userEmail || !userEmail.endsWith('@kanerika.com')) {
+      if (!userEmail) {
         return new Response(
-          JSON.stringify({ error: 'Only Kanerika organization emails are allowed' }),
+          JSON.stringify({ error: 'No email found in Zoho profile' }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        )
+      }
+
+      if (!userEmail.endsWith('@kanerika.com')) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Access denied: Only Kanerika organization emails (@kanerika.com) are allowed. Your email: ' + userEmail 
+          }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 403
@@ -105,6 +127,8 @@ serve(async (req) => {
       
       const supabase = createClient(supabaseUrl, supabaseKey)
 
+      console.log('Looking up employee with email:', userEmail)
+
       const { data: employee, error } = await supabase
         .from('employees')
         .select('*')
@@ -112,14 +136,19 @@ serve(async (req) => {
         .single()
 
       if (error || !employee) {
+        console.error('Employee lookup failed:', error)
         return new Response(
-          JSON.stringify({ error: 'Employee not found in organization database' }),
+          JSON.stringify({ 
+            error: `Employee not found in organization database. Please contact your administrator to add your email (${userEmail}) to the system.` 
+          }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 404
           }
         )
       }
+
+      console.log('Employee found:', { name: employee.name, email: employee.email })
 
       // Return employee data for successful authentication
       return new Response(

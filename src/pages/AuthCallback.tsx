@@ -13,13 +13,14 @@ const AuthCallback = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
 
         if (error) {
-          throw new Error(`OAuth error: ${error}`);
+          throw new Error(`OAuth error: ${error} - ${errorDescription || 'Unknown error'}`);
         }
 
         if (!code) {
-          throw new Error('No authorization code received');
+          throw new Error('No authorization code received from Zoho');
         }
 
         console.log('Processing OAuth callback with code:', code);
@@ -39,7 +40,9 @@ const AuthCallback = () => {
         const result = await response.json();
 
         if (!response.ok) {
-          throw new Error(result.error || 'Authentication failed');
+          // Show more specific error messages
+          const errorMessage = result.error || 'Authentication failed';
+          throw new Error(errorMessage);
         }
 
         if (result.employee) {
@@ -47,8 +50,8 @@ const AuthCallback = () => {
           localStorage.setItem('currentEmployee', JSON.stringify(result.employee));
           
           toast({
-            title: "Success",
-            description: "Successfully authenticated with Zoho!",
+            title: "Welcome!",
+            description: `Successfully authenticated as ${result.employee.name}`,
           });
           
           navigate('/', { replace: true });
@@ -58,9 +61,16 @@ const AuthCallback = () => {
         
       } catch (error) {
         console.error('OAuth callback error:', error);
+        
+        // Show more user-friendly error messages
+        let errorMessage = "Failed to authenticate with Zoho";
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+        
         toast({
           title: "Authentication Error",
-          description: error instanceof Error ? error.message : "Failed to authenticate with Zoho",
+          description: errorMessage,
           variant: "destructive",
         });
         
@@ -76,8 +86,8 @@ const AuthCallback = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <h2 className="text-xl font-semibold mb-2">Processing authentication...</h2>
-        <p className="text-gray-600">Please wait while we complete your Zoho login.</p>
+        <h2 className="text-xl font-semibold mb-2">Authenticating with Zoho...</h2>
+        <p className="text-gray-600">Please wait while we verify your credentials and complete the login process.</p>
       </div>
     </div>
   );
