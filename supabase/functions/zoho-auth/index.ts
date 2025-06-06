@@ -24,7 +24,7 @@ serve(async (req) => {
       throw new Error('Zoho credentials not configured')
     }
 
-    const redirectUri = `${req.headers.get('origin')}/auth-callback`
+    const redirectUri = `${req.headers.get('origin')}/auth/callback`
 
     if (action === 'initiate') {
       // Step 1: Generate authorization URL for Zoho OAuth

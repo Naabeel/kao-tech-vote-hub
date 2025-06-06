@@ -1,22 +1,83 @@
 
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
-    // This page will be hit by Zoho OAuth redirect
-    // The ZohoAuth component will handle the callback logic
-    // and then redirect to the main page
-    navigate('/', { replace: true });
-  }, [navigate]);
+    const handleOAuthCallback = async () => {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+
+        if (error) {
+          throw new Error(`OAuth error: ${error}`);
+        }
+
+        if (!code) {
+          throw new Error('No authorization code received');
+        }
+
+        console.log('Processing OAuth callback with code:', code);
+
+        const response = await fetch(
+          `https://ktycwyftnqflwopupnik.supabase.co/functions/v1/zoho-auth?action=callback`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0eWN3eWZ0bnFmbHdvcHVwbmlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NDIyNTYsImV4cCI6MjA2NDUxODI1Nn0.sbc_jdSL6yxJwBIJGfCxp5-C6szkkbsdneYK-6RADIw`,
+            },
+            body: JSON.stringify({ code }),
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Authentication failed');
+        }
+
+        if (result.employee) {
+          // Store employee data and redirect to main page
+          localStorage.setItem('currentEmployee', JSON.stringify(result.employee));
+          
+          toast({
+            title: "Success",
+            description: "Successfully authenticated with Zoho!",
+          });
+          
+          navigate('/', { replace: true });
+        } else {
+          throw new Error('Authentication failed - no employee data received');
+        }
+        
+      } catch (error) {
+        console.error('OAuth callback error:', error);
+        toast({
+          title: "Authentication Error",
+          description: error instanceof Error ? error.message : "Failed to authenticate with Zoho",
+          variant: "destructive",
+        });
+        
+        // Redirect back to home page on error
+        navigate('/', { replace: true });
+      }
+    };
+
+    handleOAuthCallback();
+  }, [navigate, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
         <h2 className="text-xl font-semibold mb-2">Processing authentication...</h2>
-        <p className="text-gray-600">Please wait while we complete your login.</p>
+        <p className="text-gray-600">Please wait while we complete your Zoho login.</p>
       </div>
     </div>
   );

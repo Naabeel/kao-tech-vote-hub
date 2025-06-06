@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -12,66 +12,12 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Check if we're returning from Zoho OAuth
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    
-    if (code) {
-      handleOAuthCallback(code);
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
-
-  const handleOAuthCallback = async (code: string) => {
-    setLoading(true);
-    
-    try {
-      const response = await fetch(
-        `https://ktycwyftnqflwopupnik.supabase.co/functions/v1/zoho-auth?action=callback`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0eWN3eWZ0bnFmbHdvcHVwbmlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NDIyNTYsImV4cCI6MjA2NDUxODI1Nn0.sbc_jdSL6yxJwBIJGfCxp5-C6szkkbsdneYK-6RADIw`,
-          },
-          body: JSON.stringify({ code }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Authentication failed');
-      }
-
-      if (result.employee) {
-        onSuccess(result.employee);
-        toast({
-          title: "Success",
-          description: "Successfully authenticated with Zoho!",
-        });
-      } else {
-        throw new Error('Authentication failed');
-      }
-      
-    } catch (error) {
-      console.error('Zoho OAuth callback error:', error);
-      toast({
-        title: "Authentication Error",
-        description: error instanceof Error ? error.message : "Failed to authenticate with Zoho",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleZohoLogin = async () => {
     setLoading(true);
     
     try {
+      console.log('Initiating Zoho OAuth flow...');
+      
       const response = await fetch(
         `https://ktycwyftnqflwopupnik.supabase.co/functions/v1/zoho-auth?action=initiate`,
         {
@@ -89,6 +35,8 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
         throw new Error(result.error || 'Failed to initiate Zoho authentication');
       }
 
+      console.log('Redirecting to Zoho OAuth URL:', result.authUrl);
+      
       // Redirect to Zoho OAuth
       window.location.href = result.authUrl;
       
@@ -114,7 +62,7 @@ const ZohoAuth = ({ onSuccess }: ZohoAuthProps) => {
           className="w-full"
           disabled={loading}
         >
-          {loading ? 'Authenticating...' : 'Login with Zoho'}
+          {loading ? 'Redirecting to Zoho...' : 'Login with Zoho'}
         </Button>
         
         <div className="text-xs text-gray-500 text-center">
