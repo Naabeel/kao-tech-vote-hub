@@ -16,11 +16,11 @@ const AuthCallback = () => {
         const errorDescription = urlParams.get('error_description');
 
         if (error) {
-          throw new Error(`OAuth error: ${error} - ${errorDescription || 'Unknown error'}`);
+          throw new Error(`Authentication was denied or failed. Please try again.`);
         }
 
         if (!code) {
-          throw new Error('No authorization code received from Zoho');
+          throw new Error('Authentication failed. No authorization code received from Zoho.');
         }
 
         console.log('Processing OAuth callback with code:', code);
@@ -41,18 +41,25 @@ const AuthCallback = () => {
         const result = await response.json();
 
         if (!response.ok) {
-          // Show specific error messages
-          const errorMessage = result.error || 'Authentication failed';
-          throw new Error(errorMessage);
+          // Handle specific error cases with user-friendly messages
+          if (response.status === 403) {
+            throw new Error('Access denied: Only Kanerika organization emails are allowed to access this application.');
+          } else if (response.status === 400) {
+            throw new Error('Invalid authentication request. Please try logging in again.');
+          } else if (response.status === 500) {
+            throw new Error('Authentication service is temporarily unavailable. Please try again later.');
+          } else {
+            throw new Error('Authentication failed. Please check your credentials and try again.');
+          }
         }
 
         if (result.employee) {
-          // Store employee data and redirect to main page
-          localStorage.setItem('currentEmployee', JSON.stringify(result.employee));
+          // Store employee data in sessionStorage instead of localStorage for better security
+          sessionStorage.setItem('currentEmployee', JSON.stringify(result.employee));
           
           toast({
             title: "Welcome!",
-            description: `Successfully authenticated with Zoho as ${result.employee.name} (${result.employee.email})`,
+            description: `Successfully authenticated with Zoho as ${result.employee.name}`,
           });
 
           // Show additional info if employee data came from database
@@ -64,14 +71,14 @@ const AuthCallback = () => {
           
           navigate('/', { replace: true });
         } else {
-          throw new Error('Authentication failed - no employee data received');
+          throw new Error('Authentication completed but user profile could not be created. Please contact support.');
         }
         
       } catch (error) {
         console.error('OAuth callback error:', error);
         
         // Show user-friendly error messages
-        let errorMessage = "Failed to authenticate with Zoho";
+        let errorMessage = "Authentication failed. Please try again.";
         if (error instanceof Error) {
           errorMessage = error.message;
         }

@@ -54,7 +54,15 @@ const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard }: {
   };
 
   const handleSignOut = () => {
+    // Clear both session and local storage
+    sessionStorage.removeItem('currentEmployee');
     localStorage.removeItem('currentEmployee');
+    
+    toast({
+      title: "Signed out",
+      description: "You have been successfully signed out.",
+    });
+    
     window.location.reload();
   };
 

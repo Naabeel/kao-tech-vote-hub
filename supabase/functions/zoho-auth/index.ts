@@ -21,10 +21,17 @@ serve(async (req) => {
     const domain = Deno.env.get('ZOHO_DOMAIN') || 'https://accounts.zoho.com'
 
     if (!clientId || !clientSecret) {
-      throw new Error('Zoho credentials not configured')
+      console.error('Zoho credentials not configured')
+      return new Response(
+        JSON.stringify({ error: 'Authentication service is temporarily unavailable. Please try again later.' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
+        }
+      )
     }
 
-    const redirectUri = `${req.headers.get('origin')}/auth/callback`
+    const redirectUri = `http://localhost:8080/auth/callback`
 
     if (action === 'initiate') {
       // Step 1: Generate authorization URL for Zoho OAuth with prompt=login to force login
@@ -53,7 +60,13 @@ serve(async (req) => {
       const { code } = await req.json()
 
       if (!code) {
-        throw new Error('Authorization code not provided')
+        return new Response(
+          JSON.stringify({ error: 'Invalid authentication request. Please try logging in again.' }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        )
       }
 
       console.log('Processing OAuth callback with code:', code)
@@ -77,7 +90,13 @@ serve(async (req) => {
 
       if (!tokenResponse.ok) {
         console.error('Token exchange failed:', tokenData)
-        throw new Error(`Token exchange failed: ${tokenData.error || 'Unknown error'}`)
+        return new Response(
+          JSON.stringify({ error: 'Authentication failed. Please check your credentials and try again.' }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        )
       }
 
       console.log('Token exchange successful')
@@ -93,7 +112,13 @@ serve(async (req) => {
 
       if (!profileResponse.ok) {
         console.error('Profile fetch failed:', profileData)
-        throw new Error(`Profile fetch failed: ${profileData.error || 'Unknown error'}`)
+        return new Response(
+          JSON.stringify({ error: 'Failed to retrieve user profile. Please try again.' }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        )
       }
 
       console.log('Profile data retrieved from Zoho:', { 
@@ -107,7 +132,7 @@ serve(async (req) => {
       const userEmail = profileData.Email || profileData.email
       if (!userEmail) {
         return new Response(
-          JSON.stringify({ error: 'No email found in Zoho profile' }),
+          JSON.stringify({ error: 'No email found in your Zoho profile. Please contact support.' }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 400
@@ -118,7 +143,7 @@ serve(async (req) => {
       if (!userEmail.endsWith('@kanerika.com')) {
         return new Response(
           JSON.stringify({ 
-            error: 'Access denied: Only Kanerika organization emails (@kanerika.com) are allowed. Your email: ' + userEmail 
+            error: 'Access denied: Only Kanerika organization emails are allowed to access this application.' 
           }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -143,13 +168,13 @@ serve(async (req) => {
         .eq('email', userEmail)
         .single()
 
-      // Create employee object from Zoho data
+      // Create employee object from Zoho data (primary source) with optional DB data
       const employeeData = {
         employee_id: profileData.ZUID || profileData.User_ID || userEmail,
         name: profileData.Display_Name || `${profileData.First_Name} ${profileData.Last_Name}`,
         name2: profileData.Display_Name || '',
         email: userEmail,
-        // If employee exists in DB, merge the data, otherwise use defaults
+        // Merge database data if available, otherwise use defaults
         selected_idea: employee?.selected_idea || '',
         idea1_title: employee?.idea1_title || '',
         idea2_title: employee?.idea2_title || '',
@@ -185,7 +210,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ error: 'Invalid action' }),
+      JSON.stringify({ error: 'Invalid request. Please try again.' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400
@@ -195,7 +220,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Zoho auth error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Authentication service is temporarily unavailable. Please try again later.' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500

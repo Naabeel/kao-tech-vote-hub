@@ -38,10 +38,14 @@ const Index = () => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in
-    const stored = localStorage.getItem('currentEmployee');
-    if (stored) {
-      setCurrentEmployee(JSON.parse(stored));
+    // Check both sessionStorage (OAuth) and localStorage (fallback) for user data
+    const sessionStored = sessionStorage.getItem('currentEmployee');
+    const localStored = localStorage.getItem('currentEmployee');
+    
+    if (sessionStored) {
+      setCurrentEmployee(JSON.parse(sessionStored));
+    } else if (localStored) {
+      setCurrentEmployee(JSON.parse(localStored));
     }
 
     // Check for admin access
