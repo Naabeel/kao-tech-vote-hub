@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Auth from './Auth';
 import Dashboard from './Dashboard';
@@ -55,6 +56,23 @@ const Index = () => {
   }, []);
 
   const checkAuthStatus = () => {
+    // Check for temporary user data from Zoho callback first
+    const tempUserData = sessionStorage.getItem('tempUserData');
+    if (tempUserData) {
+      try {
+        const userData = JSON.parse(tempUserData);
+        console.log('Found temporary user data from Zoho callback, logging in user');
+        setCurrentEmployee(userData);
+        // Clear the temporary data immediately for security
+        sessionStorage.removeItem('tempUserData');
+        setAuthCheckComplete(true);
+        return;
+      } catch (error) {
+        console.error('Error parsing temporary user data:', error);
+        sessionStorage.removeItem('tempUserData');
+      }
+    }
+
     // Check if there's a stored auth flag (minimal storage)
     const isUserAuthenticated = sessionStorage.getItem('isAuthenticated') === 'true';
     const isAdminAuth = sessionStorage.getItem('isAdminAuthenticated') === 'true';
