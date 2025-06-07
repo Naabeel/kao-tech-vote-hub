@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +8,11 @@ import { supabase } from '@/integrations/supabase/client';
 import QRCodeGenerator from './QRCodeGenerator';
 import { Upload, Download, Users, BarChart3, LogOut, Globe } from 'lucide-react';
 
-const AdminPanel = () => {
+interface AdminPanelProps {
+  onSignOut: () => void;
+}
+
+const AdminPanel = ({ onSignOut }: AdminPanelProps) => {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [customDomain, setCustomDomain] = useState('');
@@ -118,7 +121,7 @@ const AdminPanel = () => {
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Admin Panel</h1>
             <p className="text-gray-600">KaoTech Day-2025 Voting Platform Administration</p>
           </div>
-          <Button onClick={handleAdminLogout} variant="outline" className="flex items-center gap-2">
+          <Button onClick={onSignOut} variant="outline" className="flex items-center gap-2">
             <LogOut className="w-4 h-4" />
             Logout
           </Button>
