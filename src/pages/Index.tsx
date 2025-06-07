@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Auth from './Auth';
 import Dashboard from './Dashboard';
@@ -106,7 +105,7 @@ const Index = () => {
     if (!isAdminAuthenticated) {
       return <AdminLogin onAdminLogin={handleAdminLogin} />;
     }
-    return <AdminPanel currentAdmin={currentAdmin} onSignOut={handleSignOut} />;
+    return <AdminPanel onSignOut={handleSignOut} />;
   }
 
   // Show loading while checking auth status
