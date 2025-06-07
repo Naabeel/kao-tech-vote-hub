@@ -7,7 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Shield } from 'lucide-react';
 
-const AdminLogin = ({ onAdminLogin }: { onAdminLogin: () => void }) => {
+interface AdminUser {
+  id: string;
+  email: string;
+}
+
+interface AdminLoginProps {
+  onAdminLogin: (adminData: AdminUser) => void;
+}
+
+const AdminLogin = ({ onAdminLogin }: AdminLoginProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +30,7 @@ const AdminLogin = ({ onAdminLogin }: { onAdminLogin: () => void }) => {
       // Check admin credentials
       const { data: admin, error } = await supabase
         .from('admin_users')
-        .select('*')
+        .select('id, email')
         .eq('email', email)
         .eq('password_hash', password)
         .single();
@@ -36,13 +45,12 @@ const AdminLogin = ({ onAdminLogin }: { onAdminLogin: () => void }) => {
         return;
       }
 
-      // Store admin session
-      localStorage.setItem('adminUser', JSON.stringify(admin));
-      onAdminLogin();
+      // Pass admin data to parent without storing sensitive info in browser storage
+      onAdminLogin({ id: admin.id, email: admin.email });
 
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Authentication Error",
         description: "Something went wrong. Please try again.",
         variant: "destructive",
       });

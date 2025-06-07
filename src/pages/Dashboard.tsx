@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -30,16 +29,27 @@ interface Employee {
   hackathon_participation: string;
 }
 
-const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard }: { 
-  currentEmployee: Employee; 
+interface DashboardProps {
+  currentEmployee: Employee;
   onStartVoting: () => void;
   onShowLeaderboard: () => void;
-}) => {
+  onSignOut: () => void;
+}
+
+const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard, onSignOut }: DashboardProps) => {
   const [voteCount, setVoteCount] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchVoteCount();
+    
+    // Check for temporary user data from Zoho callback
+    const tempUserData = sessionStorage.getItem('tempUserData');
+    if (tempUserData) {
+      // Clear the temporary data immediately for security
+      sessionStorage.removeItem('tempUserData');
+      console.log('Temporary Zoho user data cleared from storage');
+    }
   }, [currentEmployee]);
 
   const fetchVoteCount = async () => {
@@ -54,19 +64,14 @@ const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard }: {
   };
 
   const handleSignOut = () => {
-    // Clear both session and local storage
-    sessionStorage.removeItem('currentEmployee');
-    localStorage.removeItem('currentEmployee');
-    
     toast({
       title: "Signed out",
       description: "You have been successfully signed out.",
     });
     
-    window.location.reload();
+    onSignOut();
   };
 
-  // Get all submitted ideas for display
   const submittedIdeas = [
     currentEmployee.idea1_title && { 
       title: currentEmployee.idea1_title, 

@@ -13,14 +13,13 @@ const AuthCallback = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const error = urlParams.get('error');
-        const errorDescription = urlParams.get('error_description');
 
         if (error) {
-          throw new Error(`Authentication was denied or failed. Please try again.`);
+          throw new Error('Authentication was denied. Please try again.');
         }
 
         if (!code) {
-          throw new Error('Authentication failed. No authorization code received from Zoho.');
+          throw new Error('Authentication failed. Please try logging in again.');
         }
 
         console.log('Processing OAuth callback with code:', code);
@@ -41,43 +40,38 @@ const AuthCallback = () => {
         const result = await response.json();
 
         if (!response.ok) {
-          // Handle specific error cases with user-friendly messages
+          let errorMessage = 'Authentication failed. Please try again.';
+          
           if (response.status === 403) {
-            throw new Error('Access denied: Only Kanerika organization emails are allowed to access this application.');
+            errorMessage = 'Access denied: Only Kanerika organization emails are allowed.';
           } else if (response.status === 400) {
-            throw new Error('Invalid authentication request. Please try logging in again.');
+            errorMessage = 'Invalid authentication request. Please try again.';
           } else if (response.status === 500) {
-            throw new Error('Authentication service is temporarily unavailable. Please try again later.');
-          } else {
-            throw new Error('Authentication failed. Please check your credentials and try again.');
+            errorMessage = 'Authentication service temporarily unavailable. Please try again later.';
           }
+          
+          throw new Error(errorMessage);
         }
 
         if (result.employee) {
-          // Store employee data in sessionStorage instead of localStorage for better security
-          sessionStorage.setItem('currentEmployee', JSON.stringify(result.employee));
+          // Store user data temporarily in sessionStorage for the redirect
+          // This will be picked up by the main app and moved to memory
+          sessionStorage.setItem('tempUserData', JSON.stringify(result.employee));
           
           toast({
             title: "Welcome!",
-            description: `Successfully authenticated with Zoho as ${result.employee.name}`,
+            description: `Successfully authenticated as ${result.employee.name}`,
           });
 
-          // Show additional info if employee data came from database
-          if (result.fromDatabase) {
-            console.log('Employee data loaded from database with ideas and voting info');
-          } else {
-            console.log('New employee authenticated via Zoho - basic profile created');
-          }
-          
+          console.log('Zoho authentication successful');
           navigate('/', { replace: true });
         } else {
-          throw new Error('Authentication completed but user profile could not be created. Please contact support.');
+          throw new Error('Authentication completed but user profile could not be created.');
         }
         
       } catch (error) {
         console.error('OAuth callback error:', error);
         
-        // Show user-friendly error messages
         let errorMessage = "Authentication failed. Please try again.";
         if (error instanceof Error) {
           errorMessage = error.message;
@@ -89,7 +83,6 @@ const AuthCallback = () => {
           variant: "destructive",
         });
         
-        // Redirect back to home page on error
         navigate('/', { replace: true });
       }
     };
@@ -102,8 +95,7 @@ const AuthCallback = () => {
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
         <h2 className="text-xl font-semibold mb-2">Authenticating with Zoho...</h2>
-        <p className="text-gray-600">Please wait while we verify your Zoho credentials and complete the login process.</p>
-        <p className="text-sm text-gray-500 mt-2">You will be automatically redirected once authentication is complete.</p>
+        <p className="text-gray-600">Please wait while we verify your credentials.</p>
       </div>
     </div>
   );

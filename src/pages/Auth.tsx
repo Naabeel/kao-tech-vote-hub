@@ -7,7 +7,34 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import ZohoAuth from '@/components/ZohoAuth';
 
-const Auth = () => {
+interface Employee {
+  employee_id: string;
+  name: string;
+  name2: string;
+  email: string;
+  selected_idea: string;
+  idea1_title: string;
+  idea2_title: string;
+  idea3_title: string;
+  problem1: string;
+  problem2: string;
+  problem3: string;
+  solution1: string;
+  solution2: string;
+  solution3: string;
+  roi1: string;
+  roi2: string;
+  roi3: string;
+  architectural_diagram: string;
+  group_name: string;
+  hackathon_participation: string;
+}
+
+interface AuthProps {
+  onUserLogin: (userData: Employee) => void;
+}
+
+const Auth = ({ onUserLogin }: AuthProps) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -17,7 +44,7 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Check if employee exists in our database
+      // Check if employee exists in our database (for simple login)
       const { data: employee, error: employeeError } = await supabase
         .from('employees')
         .select('*')
@@ -26,22 +53,20 @@ const Auth = () => {
 
       if (employeeError || !employee) {
         toast({
-          title: "Error",
-          description: "Please use your registered organization email ID",
+          title: "Access Denied",
+          description: "Please use your registered organization email ID or login with Zoho SSO",
           variant: "destructive",
         });
         setLoading(false);
         return;
       }
 
-      // For demo purposes, we'll create a simple session
-      // In production, you'd integrate with Zoho API here
-      localStorage.setItem('currentEmployee', JSON.stringify(employee));
-      window.location.reload();
+      // Pass the employee data to parent component
+      onUserLogin(employee);
 
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Authentication Error",
         description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
@@ -50,10 +75,9 @@ const Auth = () => {
     }
   };
 
-  const handleZohoSuccess = (userData: any) => {
-    // Handle successful Zoho authentication
-    localStorage.setItem('currentEmployee', JSON.stringify(userData));
-    window.location.reload();
+  const handleZohoSuccess = (userData: Employee) => {
+    // Pass the user data to parent component without storing in browser storage
+    onUserLogin(userData);
   };
 
   return (
@@ -81,7 +105,7 @@ const Auth = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your.email@kaotech.com"
+                  placeholder="your.email@kanerika.com"
                   required
                   className="mt-1"
                 />
