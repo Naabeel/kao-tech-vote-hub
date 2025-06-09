@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -40,10 +41,12 @@ const VotingPage = ({ currentEmployee, onBack }: {
   const [timeLeft, setTimeLeft] = useState(0);
   const [votingActive, setVotingActive] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
+  const [userVotes, setUserVotes] = useState<string[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchEmployees();
+    fetchUserVotes();
   }, []);
 
   useEffect(() => {
@@ -63,13 +66,55 @@ const VotingPage = ({ currentEmployee, onBack }: {
   }, [votingActive, timeLeft]);
 
   const fetchEmployees = async () => {
-    const { data, error } = await supabase
-      .from('employees')
-      .select('*')
-      .neq('employee_id', currentEmployee.employee_id);
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .neq('employee_id', currentEmployee.employee_id);
 
-    if (!error && data) {
-      setEmployees(data);
+      if (error) {
+        console.error('Error fetching employees:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load employees. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data) {
+        console.log('Fetched employees:', data.length);
+        setEmployees(data);
+      }
+    } catch (error) {
+      console.error('Exception fetching employees:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load employees. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchUserVotes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('votes')
+        .select('voted_for_employee_id')
+        .eq('voter_employee_id', currentEmployee.employee_id);
+
+      if (error) {
+        console.error('Error fetching user votes:', error);
+        return;
+      }
+
+      if (data) {
+        const votedEmployeeIds = data.map(vote => vote.voted_for_employee_id);
+        setUserVotes(votedEmployeeIds);
+        console.log('User has already voted for:', votedEmployeeIds);
+      }
+    } catch (error) {
+      console.error('Exception fetching user votes:', error);
     }
   };
 
@@ -81,14 +126,22 @@ const VotingPage = ({ currentEmployee, onBack }: {
   );
 
   const startVotingSession = (employee: Employee) => {
+    console.log('Starting voting session for:', employee.employee_id, employee.name);
     setSelectedEmployee(employee);
     setTimeLeft(45);
     setVotingActive(true);
-    setHasVoted(false);
+    setHasVoted(userVotes.includes(employee.employee_id));
   };
 
   const castVote = async () => {
     if (!selectedEmployee || hasVoted) return;
+
+    console.log('Attempting to cast vote:', {
+      voter: currentEmployee.employee_id,
+      votedFor: selectedEmployee.employee_id,
+      voterName: currentEmployee.name,
+      votedForName: selectedEmployee.name
+    });
 
     try {
       const { error } = await supabase
@@ -99,6 +152,7 @@ const VotingPage = ({ currentEmployee, onBack }: {
         });
 
       if (error) {
+        console.error('Database error while casting vote:', error);
         if (error.code === '23505') {
           toast({
             title: "Already Voted",
@@ -106,22 +160,33 @@ const VotingPage = ({ currentEmployee, onBack }: {
             variant: "destructive",
           });
         } else {
-          throw error;
+          toast({
+            title: "Error",
+            description: `Failed to cast vote: ${error.message}`,
+            variant: "destructive",
+          });
         }
       } else {
+        console.log('Vote cast successfully');
         setHasVoted(true);
+        setUserVotes(prev => [...prev, selectedEmployee.employee_id]);
         toast({
           title: "Vote Cast!",
           description: `Your vote for ${selectedEmployee.name} ${selectedEmployee.name2 ? `(${selectedEmployee.name2})` : ''} has been recorded`,
         });
       }
     } catch (error) {
+      console.error('Exception while casting vote:', error);
       toast({
         title: "Error",
         description: "Failed to cast vote. Please try again.",
         variant: "destructive",
       });
     }
+  };
+
+  const hasAlreadyVoted = (employeeId: string) => {
+    return userVotes.includes(employeeId);
   };
 
   return (
@@ -133,7 +198,10 @@ const VotingPage = ({ currentEmployee, onBack }: {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Voting Session</h1>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Voting Session</h1>
+              <p className="text-sm text-gray-600">Logged in as: {currentEmployee.name} ({currentEmployee.employee_id})</p>
+            </div>
           </div>
           
           {votingActive && (
@@ -166,37 +234,44 @@ const VotingPage = ({ currentEmployee, onBack }: {
 
             {/* Employee List */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {filteredEmployees.map((employee) => (
-                <Card key={employee.employee_id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base sm:text-lg">
-                      {employee.name} {employee.name2 ? `(${employee.name2})` : ''}
-                    </CardTitle>
-                    <div className="flex flex-wrap gap-1">
-                      <Badge variant="outline" className="text-xs">{employee.employee_id}</Badge>
-                      {employee.group_name && (
-                        <Badge variant="secondary" className="text-xs">{employee.group_name}</Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-semibold text-xs sm:text-sm text-gray-600">Selected Idea:</h4>
-                        <p className="text-xs sm:text-sm line-clamp-2">{employee.selected_idea || 'No idea selected'}</p>
+              {filteredEmployees.map((employee) => {
+                const alreadyVoted = hasAlreadyVoted(employee.employee_id);
+                return (
+                  <Card key={employee.employee_id} className={`hover:shadow-lg transition-shadow cursor-pointer ${alreadyVoted ? 'bg-green-50 border-green-200' : ''}`}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base sm:text-lg">
+                        {employee.name} {employee.name2 ? `(${employee.name2})` : ''}
+                      </CardTitle>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant="outline" className="text-xs">{employee.employee_id}</Badge>
+                        {employee.group_name && (
+                          <Badge variant="secondary" className="text-xs">{employee.group_name}</Badge>
+                        )}
+                        {alreadyVoted && (
+                          <Badge variant="default" className="text-xs bg-green-600">Already Voted</Badge>
+                        )}
                       </div>
-                      <Button 
-                        onClick={() => startVotingSession(employee)}
-                        className="w-full"
-                        size="sm"
-                        disabled={!employee.selected_idea}
-                      >
-                        Vote for this Idea
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        <div>
+                          <h4 className="font-semibold text-xs sm:text-sm text-gray-600">Selected Idea:</h4>
+                          <p className="text-xs sm:text-sm line-clamp-2">{employee.selected_idea || 'No idea selected'}</p>
+                        </div>
+                        <Button 
+                          onClick={() => startVotingSession(employee)}
+                          className="w-full"
+                          size="sm"
+                          disabled={!employee.selected_idea || alreadyVoted}
+                          variant={alreadyVoted ? "secondary" : "default"}
+                        >
+                          {alreadyVoted ? 'Already Voted' : 'Vote for this Idea'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
 
             {filteredEmployees.length === 0 && searchTerm && (
@@ -204,6 +279,15 @@ const VotingPage = ({ currentEmployee, onBack }: {
                 <CardContent className="p-6 sm:p-8 text-center">
                   <p className="text-gray-600">No employees found matching "{searchTerm}"</p>
                   <p className="text-sm text-gray-500 mt-2">Try searching by name, employee ID, or group name</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {employees.length === 0 && !searchTerm && (
+              <Card>
+                <CardContent className="p-6 sm:p-8 text-center">
+                  <p className="text-gray-600">No employees available for voting</p>
+                  <p className="text-sm text-gray-500 mt-2">Please check back later</p>
                 </CardContent>
               </Card>
             )}
