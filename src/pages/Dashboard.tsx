@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -42,7 +41,6 @@ const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard, onSignOu
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('Dashboard loaded for employee:', currentEmployee);
     fetchVoteCount();
     
     // Check for temporary user data from Zoho callback
@@ -55,33 +53,17 @@ const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard, onSignOu
   }, [currentEmployee]);
 
   const fetchVoteCount = async () => {
-    try {
-      if (!currentEmployee.employee_id) {
-        console.warn('No employee_id available for vote count fetch');
-        return;
-      }
+    const { data, error } = await supabase
+      .from('votes')
+      .select('*')
+      .eq('voted_for_employee_id', currentEmployee.employee_id);
 
-      const { data, error } = await supabase
-        .from('votes')
-        .select('*')
-        .eq('voted_for_employee_id', currentEmployee.employee_id);
-
-      if (error) {
-        console.error('Error fetching vote count:', error);
-        return;
-      }
-
-      if (data) {
-        console.log('Vote count fetched:', data.length);
-        setVoteCount(data.length);
-      }
-    } catch (error) {
-      console.error('Exception fetching vote count:', error);
+    if (!error && data) {
+      setVoteCount(data.length);
     }
   };
 
   const handleSignOut = () => {
-    console.log('Signing out user:', currentEmployee.employee_id);
     toast({
       title: "Signed out",
       description: "You have been successfully signed out.",
@@ -132,9 +114,6 @@ const Dashboard = ({ currentEmployee, onStartVoting, onShowLeaderboard, onSignOu
                 <span className="text-sm font-medium text-gray-700">
                   {currentEmployee.name} {currentEmployee.name2 ? `(${currentEmployee.name2})` : ''}
                 </span>
-                <Badge variant="outline" className="text-xs">
-                  {currentEmployee.employee_id}
-                </Badge>
               </div>
               <Button onClick={handleSignOut} variant="outline" size="sm" className="flex items-center gap-2">
                 <LogOut className="w-4 h-4" />
